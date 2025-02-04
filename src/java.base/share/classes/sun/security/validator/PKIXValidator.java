@@ -236,7 +236,7 @@ public final class PKIXValidator extends Validator {
             X509Certificate cert = chain[i];
             X500Principal dn = cert.getSubjectX500Principal();
             if (debug != null) {
-                debug.println("PKIXValidator: Certificate: checking " + cert.toString);
+                debug.println("PKIXValidator: Certificate: checking " + cert.toString());
             }
             if (debug != null) {
                 debug.println("PKIXValidator: Principal: checking " + dn.toString());
