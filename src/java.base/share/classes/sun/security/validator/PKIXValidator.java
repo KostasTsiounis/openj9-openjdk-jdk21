@@ -284,6 +284,7 @@ public final class PKIXValidator extends Validator {
                         for (PublicKey dnPublicKey: dnPublicKeys) {
                             debug.println("\t" + dnPublicKey.toString());
                         }
+                        debug.println("PKIXValidator: Certificate's public key: " + cert.getPublicKey().toString());
                     }
                     isCertKeyInDN = dnPublicKeys.contains(cert.getPublicKey());
                 }
