@@ -227,7 +227,6 @@ RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.jce.provider.1 = com.ibm.crypto.plu
     {AlgorithmParameters, AES, *}, \
     {AlgorithmParameters, CCM, *}, \
     {AlgorithmParameters, DSA, *}, \
-    {AlgorithmParameters, EC, *}, \
     {AlgorithmParameters, GCM, *}, \
     {AlgorithmParameters, OAEP, *}, \
     {AlgorithmParameters, RSAPSS, *}, \
@@ -299,6 +298,8 @@ RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.jce.provider.2 = sun.security.provi
     {Configuration, JavaLoginConfig, *}, \
     {Policy, JavaPolicy, *}]
 RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.jce.provider.3 = sun.security.ssl.SunJSSE
+RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3-withPKCS12.jce.provider.4 = com.sun.crypto.provider.SunEC [ \
+    {AlgorithmParameters, EC, *}]
 
 RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.javax.net.ssl.keyStore = NONE
 RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.securerandom.provider = OpenJCEPlusFIPS

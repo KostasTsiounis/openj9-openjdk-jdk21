@@ -29,9 +29,12 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
+import javax.xml.validation.Validator;
+
 import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.provider.certpath.PKIXExtendedParameters;
+import sun.security.util.Debug;
 import sun.security.util.SecurityProperties;
 
 /**
@@ -50,6 +53,7 @@ import sun.security.util.SecurityProperties;
  * @author Andreas Sterbenz
  */
 public final class PKIXValidator extends Validator {
+    private static final Debug debug = Debug.getInstance("pkixvalidator");
 
     /**
      * Flag indicating whether to enable revocation check for the PKIX trust
@@ -231,14 +235,32 @@ public final class PKIXValidator extends Validator {
         for (int i = 0; i < chain.length; i++) {
             X509Certificate cert = chain[i];
             X500Principal dn = cert.getSubjectX500Principal();
+            if (debug != null) {
+                debug.println("PKIXValidator: Certificate: checking " + cert.toString);
+            }
+            if (debug != null) {
+                debug.println("PKIXValidator: Principal: checking " + dn.toString());
+            }
 
             if (i == 0) {
+                if (debug != null) {
+                    debug.println("PKIXValidator: Checking first certificate");
+                }
                 if (trustedCerts.contains(cert)) {
+                    if (debug != null) {
+                        debug.println("\tcontained in trustedCerts");
+                    }
                     return new X509Certificate[] {chain[0]};
                 }
             } else {
+                if (debug != null) {
+                    debug.println("PKIXValidator: Checking certificate " + i);
+                }
                 if (!dn.equals(prevIssuer)) {
                     // chain is not ordered correctly, call builder instead
+                    if (debug != null) {
+                        debug.println("PKIXValidator: Chain is broken");
+                    }
                     return doBuild(chain, otherCerts, pkixParameters);
                 }
                 // Check if chain[i] is already trusted. It may be inside
@@ -246,11 +268,35 @@ public final class PKIXValidator extends Validator {
                 // inside trustedCerts. The latter happens when a CA has
                 // updated its cert with a stronger signature algorithm in JRE
                 // but the weak one is still in circulation.
-                if (trustedCerts.contains(cert) ||          // trusted cert
-                        (trustedSubjects.containsKey(dn) && // replacing ...
-                         trustedSubjects.get(dn).contains(  // ... weak cert
-                            cert.getPublicKey()))) {
+                boolean isCertInTrustedCerts = trustedCerts.contains(cert);
+                if (debug != null) {
+                    debug.println("PKIXValidator: Is certificate in trustedCerts: " + isCertInTrustedCerts);
+                }
+                boolean isDNInTrustedSubjects = trustedSubjects.containsKey(dn);
+                if (debug != null) {
+                    debug.println("PKIXValidator: Is DN in trustedSubjects: " + isDNInTrustedSubjects);
+                }
+                boolean isCertKeyInDN = false;
+                if (isDNInTrustedSubjects) {
+                    List<PublicKey> dnPublicKeys = trustedSubjects.get(dn);
+                    if (debug != null) {
+                        debug.println("PKIXValidator: DNs public keys:");
+                        for (PublicKey dnPublicKey: dnPublicKeys) {
+                            debug.println("\t" + dnPublicKey.toString());
+                        }
+                    }
+                    isCertKeyInDN = dnPublicKeys.contains(cert.getPublicKey());
+                }
+                if (debug != null) {
+                    debug.println("PKIXValidator: Does the DN have the certificate key in their list: " + isCertKeyInDN);
+                }
+                if (isCertInTrustedCerts ||          // trusted cert
+                        (isDNInTrustedSubjects && // replacing ...
+                        isCertKeyInDN)) {
                     // Remove and call validator on partial chain [0 .. i-1]
+                    if (debug != null) {
+                        debug.println("PKIXValidator: Validating partial chain");
+                    }
                     X509Certificate[] newChain = new X509Certificate[i];
                     System.arraycopy(chain, 0, newChain, 0, i);
                     return doValidate(newChain, pkixParameters);
@@ -263,8 +309,16 @@ public final class PKIXValidator extends Validator {
         X509Certificate last = chain[chain.length - 1];
         X500Principal issuer = last.getIssuerX500Principal();
         X500Principal subject = last.getSubjectX500Principal();
-        if (trustedSubjects.containsKey(issuer)) {
+        boolean isIssuerInTrustedSubjects = trustedSubjects.containsKey(issuer);
+        if (debug != null) {
+            debug.println("PKIXValidator: Is issuer in trustedCerts: " + isIssuerInTrustedSubjects);
+        }
+        if (isIssuerInTrustedSubjects) {
             return doValidate(chain, pkixParameters);
+        }
+
+        if (debug != null) {
+            debug.println("PKIXValidator: Nothing worked. Rebuilding chain.");
         }
 
         // otherwise, fall back to builder
