@@ -29,7 +29,6 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
-import javax.xml.validation.Validator;
 
 import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.AlgorithmChecker;
